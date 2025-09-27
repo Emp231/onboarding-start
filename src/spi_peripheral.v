@@ -9,9 +9,11 @@ module spi_peripheral (
     output reg  [7:0] en_reg_out_15_8,
     output reg  [7:0] en_reg_pwm_7_0,
     output reg  [7:0] en_reg_pwm_15_8,
-    output reg  [7:0] pwm_duty_cycle
+    output reg  [7:0] pwm_duty_cycle,
+    output reg  [7:0] uo_out       // <- exposed for testbench
 );
 
+    // 2-stage input synchronizers
     reg nCS_sync1, nCS_sync2;
     reg SCLK_sync1, SCLK_sync2;
     reg COPI_sync1, COPI_sync2;
@@ -28,6 +30,7 @@ module spi_peripheral (
         end
     end
 
+    // edge detection
     reg SCLK_prev;
     wire SCLK_rising = (SCLK_sync2 == 1'b1) && (SCLK_prev == 1'b0);
     always @(posedge clk or negedge rst_n) SCLK_prev <= (rst_n) ? SCLK_sync2 : 1'b0;
@@ -37,6 +40,7 @@ module spi_peripheral (
     wire nCS_posedge = (nCS_sync2 == 1'b1) && (nCS_prev == 1'b0);
     always @(posedge clk or negedge rst_n) nCS_prev <= (rst_n) ? nCS_sync2 : 1'b1;
 
+    // SPI transaction tracking
     reg [15:0] shift_register;
     reg [4:0]  bit_count;
     reg        frame_valid;
@@ -78,6 +82,7 @@ module spi_peripheral (
             en_reg_pwm_7_0   <= 8'h00;
             en_reg_pwm_15_8  <= 8'h00;
             pwm_duty_cycle   <= 8'h00;
+            uo_out           <= 8'h00;
         end else if(frame_valid && !transaction_processed) begin
             if(shift_register[15] == 1'b1 && shift_register[14:8] <= MAX_ADDRESS) begin
                 case(shift_register[14:8])
@@ -93,8 +98,8 @@ module spi_peripheral (
         end else if(transaction_processed) begin
             transaction_processed <= 1'b0;
         end
-    end
 
-wire [7:0] uo_out = en_reg_out_7_0;
+        uo_out <= en_reg_out_7_0;
+    end
 
 endmodule
