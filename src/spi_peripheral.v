@@ -46,6 +46,7 @@ module spi_peripheral (
         end else begin
             SCLK_prev <= SCLK_sync2;
         end
+    end
 
     reg nCS_prev;
     wire nCS_negedge = (nCS_sync2 == 1'b0) && (nCS_prev == 1'b1);
@@ -57,6 +58,7 @@ module spi_peripheral (
         end else begin
             nCS_prev <= nCS_sync2;
         end
+    end
 
   
     reg [15:0] shift_register;
