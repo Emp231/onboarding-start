@@ -95,4 +95,6 @@ module spi_peripheral (
         end
     end
 
+wire [7:0] uo_out = en_reg_out_7_0;
+
 endmodule
