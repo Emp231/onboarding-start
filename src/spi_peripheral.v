@@ -12,7 +12,7 @@ module spi_peripheral (
     output reg  [7:0] pwm_duty_cycle
 );
 
-    // Multi-stage synchronizers
+
     reg nCS_sync1,  nCS_sync2;
     reg SCLK_sync1, SCLK_sync2;
     reg COPI_sync1, COPI_sync2;
@@ -37,7 +37,6 @@ module spi_peripheral (
         end
     end
 
-    // Edge detection
     reg SCLK_prev;
     wire SCLK_rising = (SCLK_sync2 == 1'b1) && (SCLK_prev == 1'b0);
 
@@ -55,7 +54,6 @@ module spi_peripheral (
         else        nCS_prev <= nCS_sync2;
     end
 
-    // SPI shift register
     reg [15:0] shift_register;
     reg [4:0]  bit_count;
     reg        frame;
@@ -88,7 +86,6 @@ module spi_peripheral (
 
     localparam MAX_ADDRESS = 7'd4;
 
-    // Commit data to registers (Yosys-safe)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             en_reg_out_7_0   <= 8'h00;
@@ -99,7 +96,6 @@ module spi_peripheral (
             transaction      <= 1'b0;
             frame            <= 1'b0;
         end else begin
-            // Default value for transaction (prevents multiple assignment in same always block)
             transaction <= 1'b0;
 
             if (frame && !transaction) begin
