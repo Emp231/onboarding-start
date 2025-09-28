@@ -12,8 +12,8 @@ module spi_peripheral (
     output reg  [7:0] pwm_duty_cycle
 );
 
-
-    reg nCS_sync1,  nCS_sync2;
+  
+    reg nCS_sync1, nCS_sync2;
     reg SCLK_sync1, SCLK_sync2;
     reg COPI_sync1, COPI_sync2;
 
@@ -28,21 +28,22 @@ module spi_peripheral (
         end else begin
             nCS_sync1  <= nCS;
             nCS_sync2  <= nCS_sync1;
-
             SCLK_sync1 <= SCLK;
             SCLK_sync2 <= SCLK_sync1;
-
             COPI_sync1 <= COPI;
             COPI_sync2 <= COPI_sync1;
         end
     end
 
+  
     reg SCLK_prev;
     wire SCLK_rising = (SCLK_sync2 == 1'b1) && (SCLK_prev == 1'b0);
 
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) SCLK_prev <= 1'b0;
-        else        SCLK_prev <= SCLK_sync2;
+        if (!rst_n) 
+            SCLK_prev <= 1'b0;
+        else 
+            SCLK_prev <= SCLK_sync2;
     end
 
     reg nCS_prev;
@@ -50,9 +51,12 @@ module spi_peripheral (
     wire nCS_posedge = (nCS_sync2 == 1'b1) && (nCS_prev == 1'b0);
 
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) nCS_prev <= 1'b1;
-        else        nCS_prev <= nCS_sync2;
+        if (!rst_n) 
+            nCS_prev <= 1'b1;
+        else 
+            nCS_prev <= nCS_sync2;
     end
+
 
     reg [15:0] shift_register;
     reg [4:0]  bit_count;
@@ -71,7 +75,7 @@ module spi_peripheral (
                 frame     <= 1'b0;
             end
 
-            if (nCS_sync2 == 1'b0 && SCLK_rising) begin
+            if (~nCS_sync2 && SCLK_rising) begin
                 shift_register <= {shift_register[14:0], COPI_sync2};
                 bit_count      <= bit_count + 5'd1;
             end
@@ -86,6 +90,7 @@ module spi_peripheral (
 
     localparam MAX_ADDRESS = 7'd4;
 
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             en_reg_out_7_0   <= 8'h00;
@@ -94,24 +99,20 @@ module spi_peripheral (
             en_reg_pwm_15_8  <= 8'h00;
             pwm_duty_cycle   <= 8'h00;
             transaction      <= 1'b0;
-            frame            <= 1'b0;
-        end else begin
-            transaction <= 1'b0;
-
-            if (frame && !transaction) begin
-                if (shift_register[15] == 1'b1 && shift_register[14:8] <= MAX_ADDRESS) begin
-                    case (shift_register[14:8])
-                        7'd0: en_reg_out_7_0   <= shift_register[7:0];
-                        7'd1: en_reg_out_15_8  <= shift_register[7:0];
-                        7'd2: en_reg_pwm_7_0   <= shift_register[7:0];
-                        7'd3: en_reg_pwm_15_8  <= shift_register[7:0];
-                        7'd4: pwm_duty_cycle   <= shift_register[7:0];
-                        default: ;
-                    endcase
-                end
-                transaction <= 1'b1;  // only assignment to 1
-                frame       <= 1'b0;  // clear frame
+        end else if (frame && !transaction) begin
+            if (shift_register[15] == 1'b1 && shift_register[14:8] <= MAX_ADDRESS) begin
+                case (shift_register[14:8])
+                    7'd0: en_reg_out_7_0   <= shift_register[7:0];
+                    7'd1: en_reg_out_15_8  <= shift_register[7:0];
+                    7'd2: en_reg_pwm_7_0   <= shift_register[7:0];
+                    7'd3: en_reg_pwm_15_8  <= shift_register[7:0];
+                    7'd4: pwm_duty_cycle   <= shift_register[7:0];
+                    default: ;
+                endcase
             end
+            transaction <= 1'b1;
+        end else if (transaction) begin
+            transaction <= 1'b0;
         end
     end
 
