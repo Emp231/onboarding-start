@@ -9,6 +9,18 @@ from cocotb.triggers import ClockCycles
 from cocotb.types import Logic
 from cocotb.types import LogicArray
 
+async def RisingEdgeBit(signal, bit):
+    while True:
+        await RisingEdge(signal)              
+        if int(signal.value[bit]) == 1:       
+            return
+
+async def FallingEdgeBit(signal, bit):
+    while True:
+        await FallingEdge(signal)              
+        if int(signal.value[bit]) == 0:       
+            return
+
 async def await_half_sclk(dut):
     """Wait for the SCLK signal to go high or low."""
     start_time = cocotb.utils.get_sim_time(units="ns")
@@ -167,18 +179,17 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x04, 0x80)
 
     await ClockCycles(dut.clk, 1000)
-    await RisingEdge(dut.uo_out[0])
+    await RisingEdge(dut.uo_out_bit0)
     t1 = cocotb.utils.get_sim_time("ns")
 
-    await RisingEdge(dut.uo_out[0])
+    await RisingEdge(dut.uo_out_bit0)
     t2 = cocotb.utils.get_sim_time("ns")
 
     time_elapsed = t2 - t1
     convert_to_freq = 1e9 / time_elapsed
     dut._log.info(f"Freq: {convert_to_freq:.2f} Hz")
 
-    assert 2970 <= convert_to_freq/1e3 <= 3030, f"PWM frequency out of range: {convert_to_freq:.2f} Hz"
-
+    assert abs(convert_to_freq - 3000) <= 30, f"PWM frequency out of range: {convert_to_freq:.2f} Hz"
     dut._log.info("PWM Frequency test completed successfully")
 
 
@@ -206,11 +217,11 @@ async def test_pwm_duty(dut):
     #50%
     await send_spi_transaction(dut, 1, 0x04, 0x80)
     await ClockCycles(dut.clk, 5000)
-    await RisingEdge(dut.uo_out[0])
+    await RisingEdge(dut.uo_out_bit0)
     t1 = cocotb.utils.get_sim_time("ns")
-    await FallingEdge(dut.uo_out[0])
+    await FallingEdge(dut.uo_out_bit0)
     t2 = cocotb.utils.get_sim_time("ns")
-    await RisingEdge(dut.uo_out[0])
+    await RisingEdge(dut.uo_out_bit0)
     t3 = cocotb.utils.get_sim_time("ns")
 
     high = t2 - t1
