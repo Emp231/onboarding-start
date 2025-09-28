@@ -179,10 +179,10 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x04, 0x80)
 
     await ClockCycles(dut.clk, 1000)
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdgeBit(dut.uo_out, 0)
     t1 = cocotb.utils.get_sim_time("ns")
 
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdgeBit(dut.uo_out, 0)
     t2 = cocotb.utils.get_sim_time("ns")
 
     time_elapsed = t2 - t1
@@ -217,11 +217,11 @@ async def test_pwm_duty(dut):
     #50%
     await send_spi_transaction(dut, 1, 0x04, 0x80)
     await ClockCycles(dut.clk, 5000)
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdgeBit(dut.uo_out, 0)
     t1 = cocotb.utils.get_sim_time("ns")
-    await FallingEdge(dut.uo_out_bit0)
+    await FallingEdgeBit(dut.uo_out, 0)
     t2 = cocotb.utils.get_sim_time("ns")
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdgeBit(dut.uo_out, 0)
     t3 = cocotb.utils.get_sim_time("ns")
 
     high = t2 - t1
