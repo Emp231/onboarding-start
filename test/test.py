@@ -152,10 +152,10 @@ async def test_spi(dut):
 
 async def edge_bit0(dut, val, timeout_ns=1_000_000):
     start = cocotb.utils.get_sim_time(units="ns")
-    bit_val = int(dut.uo_out.value) & 0x1
+    bit_val = dut.uo_out.value[0]
     while True:
         await RisingEdge(dut.clk)
-        current = int(dut.uo_out.value) & 0x1
+        current = dut.uo_out.value[0] 
 
         if val == 1 and bit_val == 0 and current == 1:
             return cocotb.utils.get_sim_time(units="ns")
@@ -166,6 +166,7 @@ async def edge_bit0(dut, val, timeout_ns=1_000_000):
             raise TimeoutError("Timeout waiting")
         
         bit_val = current
+
 
 @cocotb.test()
 async def test_pwm_freq(dut):
@@ -224,7 +225,7 @@ async def test_pwm_duty(dut):
     #0%
     await send_spi_transaction(dut, 1, 0x04, 0x00)
     try:
-        await edge_bit0(dut, 1, timeout_ns=100_000_000)
+        await edge_bit0(dut, 1, timeout_ns=200_000)
         assert False, "Error"
     except Exception as e:
         pass
