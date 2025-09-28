@@ -47,7 +47,7 @@ module tt_um_uwasic_samanyu_shrivastava (
     .en_reg_pwm_7_0(en_reg_pwm_7_0),
     .en_reg_pwm_15_8(en_reg_pwm_15_8),
     .pwm_duty_cycle(pwm_duty_cycle)
-);
+  );
 
   wire _unused = &{ena, clk, rst_n, 1'b0};
 
