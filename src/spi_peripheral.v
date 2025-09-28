@@ -68,7 +68,6 @@ module spi_peripheral (
             shift_register <= 16'd0;
             bit_count      <= 5'd0;
             frame          <= 1'b0;
-            transaction    <= 1'b0;
         end else begin
             if (nCS_negedge) begin
                 bit_count <= 5'd0;
