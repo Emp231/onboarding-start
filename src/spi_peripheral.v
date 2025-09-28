@@ -82,7 +82,7 @@ module spi_peripheral (
           
             if (nCS_sync2 == 1'b0 && SCLK_rising) begin
                 shift_register <= {shift_register[14:0], COPI_sync2};
-                bit_count      <= bit_count + 5'd1;
+                bit_count <= bit_count + 5'd1;
             end
 
  
@@ -117,9 +117,7 @@ module spi_peripheral (
             end
 
             transaction <= 1'b1;
-
-        end else if (transaction) begin
-            transaction <= 1'b0;
+            frame <= 1'b0;
         end
     end
 
