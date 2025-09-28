@@ -191,9 +191,9 @@ async def test_pwm_freq(dut):
     #t1 = await edge_bit0(dut, 1, timeout_ns=100_000_000)
     #t2 = await edge_bit0(dut, 1, timeout_ns=100_000_000)
 
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdge(dut.uo_out[0])
     t1 = cocotb.utils.get_sim_time(units="ns")
-    await RisingEdge(dut.uo_out_bit0)
+    await RisingEdge(dut.uo_out[0])
     t2 = cocotb.utils.get_sim_time(units="ns")
 
     time_elapsed = t2 - t1
@@ -233,11 +233,11 @@ async def test_pwm_duty(dut):
         elif value == 0xFF:
             duty = 100.0
         else:
-            await RisingEdge(dut.uo_out_bit0)
+            await RisingEdge(dut.uo_out[0])
             t1 = cocotb.utils.get_sim_time("ns")
-            await FallingEdge(dut.uo_out_bit0)
+            await FallingEdge(dut.uo_out[0])
             t2 = cocotb.utils.get_sim_time('ns')
-            await RisingEdge(dut.uo_out_bit0)
+            await RisingEdge(dut.uo_out[0])
             t3 = cocotb.utils.get_sim_time('ns')
 
             time_elapsed = t3 - t1
