@@ -239,4 +239,3 @@ async def test_pwm_duty(dut):
     await check_cases(0x80, 50.0)    
     await check_cases(0xFF, 100.0)   
     dut._log.info("PWM Duty Cycle test completed successfully")
-
