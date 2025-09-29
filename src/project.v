@@ -19,6 +19,8 @@ module tt_um_uwasic_samanyu_shrivastava (
   // All output pins must be assigned. If not used, assign to 0.
   assign uio_oe = 8'hFF;
 
+  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
+
   wire [7:0] en_reg_out_7_0;
   wire [7:0] en_reg_out_15_8;
   wire [7:0] en_reg_pwm_7_0;
@@ -39,9 +41,9 @@ module tt_um_uwasic_samanyu_shrivastava (
   spi_peripheral spi_peripheral_inst (
     .clk(clk), 
     .rst_n(rst_n),
-    .nCS_in(ui_in[2]),        
-    .COPI_in(ui_in[1]),     
-    .SCLK_in(ui_in[0]),      
+    .nCS(ui_in[2]),        
+    .COPI(ui_in[1]),     
+    .SCLK(ui_in[0]),      
     .en_reg_out_7_0(en_reg_out_7_0),
     .en_reg_out_15_8(en_reg_out_15_8),
     .en_reg_pwm_7_0(en_reg_pwm_7_0),
@@ -49,6 +51,6 @@ module tt_um_uwasic_samanyu_shrivastava (
     .pwm_duty_cycle(pwm_duty_cycle)
   );
 
-  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
+  
 
 endmodule
