@@ -168,94 +168,97 @@ async def edge_bit0(dut, val, timeout_ns=1_000_000):
         
         bit_val = current
 """
-async def wait_rising_bit(signal, bit):
-
-    prev = (int(signal.value) >> bit) & 1
+async def RisingEdgeBit(signal, bit):
     while True:
-        await RisingEdge(signal)   
-        curr = (int(signal.value) >> bit) & 1
-        if prev == 0 and curr == 1:
-            return cocotb.utils.get_sim_time("ns")
-        prev = curr
+        await RisingEdge(signal)              
+        if int(signal.value[bit]) == 1:       
+            return
 
-async def wait_falling_bit(signal, bit):
-
-    prev = (int(signal.value) >> bit) & 1
+async def FallingEdgeBit(signal, bit):
     while True:
-        await RisingEdge(signal)   
-        curr = (int(signal.value) >> bit) & 1
-        if prev == 1 and curr == 0:
-            return cocotb.utils.get_sim_time("ns")
-        prev = curr
+        await FallingEdge(signal)              
+        if int(signal.value[bit]) == 0:       
+            return
 
 @cocotb.test()
 async def test_pwm_freq(dut):
-    clock = Clock(dut.clk, 100, units="ns")
-    cocotb.start_soon(clock.start())
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
 
-    dut.ena.value = 1
+    
     dut.rst_n.value = 0
+    dut.ena.value = 1
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
-    await send_spi_transaction(dut, 1, 0x00, 0x01)
-    await send_spi_transaction(dut, 1, 0x02, 0x01)
-    await send_spi_transaction(dut, 1, 0x04, 0x80)
+    await send_spi_transaction(dut, 1, 0x00, 0x01)  # en_reg_out_7_0 = 1
+    await send_spi_transaction(dut, 1, 0x02, 0x01)  # en_reg_pwm_7_0 = 1
+    await send_spi_transaction(dut, 1, 0x04, 0x80)  # pwm_duty_cycle = 50%
 
     await ClockCycles(dut.clk, 1000)
 
+    await RisingEdge(dut.uo_out_bit0)
+    t1 = cocotb.utils.get_sim_time('ns')
+    await RisingEdge(dut.uo_out_bit0)
+    t2 = cocotb.utils.get_sim_time('ns')
 
-    t1 = await wait_rising_bit(dut.uo_out, 0)
-    t2 = await wait_rising_bit(dut.uo_out, 0)
+    period_ns = t2 - t1
+    freq_hz = 1e9 / period_ns
+    dut._log.info(f"Measured frequency = {freq_hz:.2f} Hz")
 
-    time_elapsed = t2 - t1
-    freq = 1e9 / time_elapsed
+    assert abs(freq_hz - 3000) <= 30, \
+        f"Expected 3000 Hz, got {freq_hz} Hz"
 
-    dut._log.info(f"Measured PWM frequency: {freq:.2f} Hz")
-    assert 2970 < freq < 3030, f"Frequency out of range: {freq:.2f} Hz"
 
     dut._log.info("PWM Frequency test completed successfully")
 
 
 @cocotb.test()
 async def test_pwm_duty(dut):
-    clock = Clock(dut.clk, 100, units="ns")
-    cocotb.start_soon(clock.start())
-
-    dut.ena.value = 1
+    cocotb.start_soon(Clock(dut.clk, 100, units="ns").start())
     dut.rst_n.value = 0
+    dut.ena.value = 1
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
+    
     await send_spi_transaction(dut, 1, 0x00, 0x01)
     await send_spi_transaction(dut, 1, 0x02, 0x01)
 
-    async def checking(value, expected):
+    # helper function to check duty cycle increments
+    async def check_duty(value, expected_pct):
         await send_spi_transaction(dut, 1, 0x04, value)
         await ClockCycles(dut.clk, 5000)
 
+
         if value == 0x00:
+            
             duty = 0.0
         elif value == 0xFF:
+            
             duty = 100.0
         else:
-            t1 = await wait_rising_bit(dut.uo_out, 0)
-            t2 = await wait_falling_bit(dut.uo_out, 0)
-            t3 = await wait_rising_bit(dut.uo_out, 0)
+            await RisingEdge(dut.uo_out_bit0)
+            t1 = cocotb.utils.get_sim_time('ns')
+            await FallingEdge(dut.uo_out_bit0)
+            t2 = cocotb.utils.get_sim_time('ns')
+            await RisingEdge(dut.uo_out_bit0)
+            t3 = cocotb.utils.get_sim_time('ns')
 
-            time_elapsed = t3 - t1
-            high = t2 - t1
-            duty = 100.0 * high / time_elapsed
+            high_time = t2 - t1
+            period = t3 - t1
+            duty = (high_time / period) * 100.0
 
-            dut._log.info(f"duty={duty:.1f}% for reg={value:#04x}")
+        dut._log.info(f"duty={duty:.1f}% for reg={value:#04x}")
 
-        assert abs(duty - expected) <= 5, \
-            f"Expected duty ~{expected}%, got {duty}%"
+        assert abs(duty - expected_pct) <= 5, \
+            f"Expected duty ~{expected_pct}%, got {duty}%"
 
-    await checking(0x00, 0.0)     
-    await checking(0x80, 50.0)    
-    await checking(0xFF, 100.0)   
 
+
+    # check edge cases
+    await check_duty(0x00, 0.0)     
+    await check_duty(0x80, 50.0)    
+    await check_duty(0xFF, 100.0)   
     dut._log.info("PWM Duty Cycle test completed successfully")
